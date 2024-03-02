@@ -1,0 +1,93 @@
++----------------------------------+
+|        LowkeySpots Schema   	   |
++----------------------------------+
+
+——————————————————————
+MODELS FOR USERBASE ->  
+**might need to hash User.name and request_id
+**if user1 blocks user2 -> the relation between user1 and user2 is blocked but between user2 and user1 is nothing (prevents double block)
+
+USER
+{
+	*name[string] 
+	psswd[string]
+	email[string]
+	date_created[DateTime object]
+	account_deleted[bool]
+	map_count[int]
+	token[hash]
+}
+
+FRIEND_REQUEST
+{
+	*request_id[int(chron)]
+	sender[USER.name]
+	receiver[USER.name]
+	status[int -> 0: pending | 1: accepted | 2: rejected | 3: invalid request (receiver has you blocked OR self request OR this is spamming)]
+}
+
+
+USERS_RELATION
+{
+	*user_1[USER.name]
+	*user_2[USER.name]
+	status[int -> 0: nothing | 1: friend | 2: blocked]
+}
+
+
+————————————————————————
+MODELS FOR MAP -> 
+**might need to hash Map.unique_id
+
+MAP
+{
+	*map_id[int(chron)]
+	map_title[string] *should be max 200 characters
+	map_description[string]
+	theme[string: integer string depending on the customizations '00' by default can go to something like '66']
+	origin_load_x[float: LAT]
+	origin_load_y[float: LONG]
+	marker_count[int] (should be limited to 20 markers maybe)
+	is_deleted[bool]
+}
+
+MAP_USER
+{
+	*map_id[MAP.map_id] 
+	*user_id[USER.name]
+	status[int -> 0: owner | 1: collaborator | 2: spectator]
+}
+
+MARKER
+{
+	*marker_id[int(chron)]
+	position_x[float: LAT]
+	position_y[float: LONG]
+	translated[string: street address]
+	map[int: MAP.id]
+	placer_id[string: USER.name]
+	time_placed[DateTime]
+
+	image_count[int] **will be capped at 5 images per marker and each image will be stored as /maps/MAP.map_id/marker_id/image_id
+	has_desc[bool] **/maps/MAP.map_id/descriptor.id
+	is_removed[bool]
+}
+
+MAP_REQUEST 
+{
+	*request_id[int(chron)]
+	sender[USER.name]
+	receiver[USER.name]
+	request_type[0: collaborator | 1: spectator]
+	status[int -> 0: pending | 1: accepted | 2: rejected]
+}
+
+
+———————————————————————— 
+General Working Notes: 
+	- We could allow spectator to non-friends
+	- The owner should be able to delete a map among other things (these abilities will be tested in the backend however should only render certain options to certain users)
+	- Image should be downloaded only when file-size < n and then it should be resized to be in a n x n. The size of the description should also have a max length. 
+	- To see your current blocked users: it should be a new tab where you may unblock. 
+	- Furthermore, you can block from friend invite, and you can block your friends. 
+	- origin_load_x/y we will pull from the owner when the map is made
